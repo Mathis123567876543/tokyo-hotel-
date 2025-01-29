@@ -2,88 +2,95 @@ import mysql from 'mysql2/promise';
 import express from 'express';
 
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 4000; // Port par défaut : 4000
 
-const connection = await mysql.createConnection({
-    host: '127.0.0.1',
-    database: 'marmiton',
-    user: 'root',
-    password: 'root'
-});
+async function startServer() {
+    try {
+        // Connexion à MySQL
+        const connection = await mysql.createConnection({
+            host: '127.0.0.1',
+            port: 3306,
+            database: 'tokyohotel', // Vérifiez que c'est bien le bon nom
+            user: 'root',
+            password: 'root' // Assurez-vous que ce mot de passe est correct
+        });
 
+        console.log("Connexion à la base de données réussie");
 
-app.get('/recipes', async (req, res) => {
-    const [results, autres] = await connection.query("SELECT * FROM recipes");
-    res.json(results);
-});
+        // Routes API
+        app.get('/booking', async (req, res) => {
+            try {
+                const [results] = await connection.query("SELECT * FROM booking");
+                res.json(results);
+            } catch (error) {
+                res.status(500).json({ error: "Erreur lors de la récupération des données." });
+            }
+        });
 
+        app.get('/collaborators', async (req, res) => {
+            try {
+                const [results] = await connection.query("SELECT * FROM collaborators");
+                res.json(results);
+            } catch (error) {
+                res.status(500).json({ error: "Erreur lors de la récupération des données." });
+            }
+        });
 
-app.get('/recipes/search', async (req, res) => {
-    const [results, autres] = await connection.query("SELECT * FROM recipes WHERE lower(name) like lower(?) or lower(tags) like (?)", [`%${req.query.search}%`, `%${req.query.search}%`]);
-    res.json(results);
-});
+        app.get('/hotels', async (req, res) => {
+            try {
+                const [results] = await connection.query("SELECT * FROM hotels");
+                res.json(results);
+            } catch (error) {
+                res.status(500).json({ error: "Erreur lors de la récupération des données." });
+            }
+        });
 
-app.get('/recipes/:id', async (req, res) => {
-    const [results, autres] = await connection.query("SELECT * FROM recipes WHERE id = ?", [req.params.id]);
-    res.json(results);
-});
+        app.get('/options_booking', async (req, res) => {
+            try {
+                const [results] = await connection.query("SELECT * FROM options_bookings");
+                res.json(results);
+            } catch (error) {
+                res.status(500).json({ error: "Erreur lors de la récupération des données." });
+            }
+        });
 
+        app.get('/room_options', async (req, res) => {
+            try {
+                const [results] = await connection.query("SELECT * FROM room_options");
+                res.json(results);
+            } catch (error) {
+                res.status(500).json({ error: "Erreur lors de la récupération des données." });
+            }
+        });
 
+        app.get('/room_types', async (req, res) => {
+            try {
+                const [results] = await connection.query("SELECT * FROM room_types");
+                res.json(results);
+            } catch (error) {
+                res.status(500).json({ error: "Erreur lors de la récupération des données." });
+            }
+        });
 
-app.listen(port, () => {
-    console.log(`Example app listening on port ${port}`);
-});
+        app.get('/rooms', async (req, res) => {
+            try {
+                const [results] = await connection.query("SELECT * FROM rooms");
+                res.json(results);
+            } catch (error) {
+                res.status(500).json({ error: "Erreur lors de la récupération des données." });
+            }
+        });
 
+        // Démarrage du serveur (une seule fois, après toutes les routes)
+        app.listen(port, () => {
+            console.log(`Serveur lancé sur http://localhost:${port}`);
+        });
 
-app.post('/recipes', async (req, res) => {
-    try{
-        const [results] = await connection.query(
-            "INSERT INTO recipes (name, ingredients, instructions, prep_time_minutes, cook_time_minutes, servings, difficulty, cuisine, calories_per_serving, tags, rating, review_count, user_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
-            [req.body.name, JSON.stringify(req.body.ingredients), JSON.stringify(req.body.instructions), req.body.prep_time_minutes, req.body.cook_time_minutes, req.body.servings, req.body.difficulty, req.body.cuisine, req.body.calories_per_serving, JSON.stringify(req.body.tags), req.body.rating, req.body.review_count, 1]
-        );
-        res.json(results);
     } catch (error) {
-        console.error(error);
-        res.status(500).json(error);
-    };
-});
+        console.error("Erreur serveur :", error);
+        process.exit(1);
+    }
+}
 
-
-app.put('/recipes', async (req, res) => {
-    try{
-        const [results] = await connection.query(
-            "UPDATE recipes SET name = ?, ingredients = ?, instructions = ?, prep_time_minutes = ?, cook_time_minutes = ?, servings = ?, difficulty = ?, cuisine = ?, calories_per_serving = ?, tags = ?, rating = ?, review_count = ?, user_id = ? WHERE id = ?",
-            [req.body.name, JSON.stringify(req.body.ingredients), JSON.stringify(req.body.instructions), req.body.prep_time_minutes, req.body.cook_time_minutes, req.body.servings, req.body.difficulty, req.body.cuisine, req.body.calories_per_serving, JSON.stringify(req.body.tags), req.body.rating, req.body.review_count, 1, req.params.id]
-        );
-        res.json(results);
-    } catch (error) {
-        console.error(error);
-        res.status(500).json(error);
-    };
-});
-
-
-
-
-app.delete('/recipes', async (req, res) => {
-    try{
-        const [results] = await connection.query(
-            "DELETE FROM recipes WHERE id = ?"
-        );
-        res.json(results);
-    } catch (error) {
-        console.error(error);
-        res.status(500).json(error);
-    };
-});
-
-
-
-
-
-
-
-
-
-
-
+// Lancer le serveur
+startServer();
